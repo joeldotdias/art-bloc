@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.2 <0.9.0;
 
+import "contracts/ArtGallery.sol";
+
 contract ArtMarket {
+    ArtGallery public artGallery;
+
     struct Listing {
         uint256 artId;
         address seller;
@@ -30,14 +34,22 @@ contract ArtMarket {
     event ListingCancelled(uint256 listingId);
     event RoyaltyPaid(uint256 artId, address artist, uint256 amount);
 
-    function listArt(uint256 _artId, address _originalArtist, uint256 _price) public returns (uint256) {
-        require(_price > 0, "Price must be > 0");
+    constructor(address _artGalleryAddr) {
+        artGallery = ArtGallery(_artGalleryAddr);
+    } 
 
+    // function listArt(uint256 _artId, address _originalArtist, uint256 _price) public returns (uint256) {
+    function listArt(uint256 _artId, uint256 _price) public returns (uint256) {
+        require(_price > 0, "Price must be > 0");
+        require(artGallery.isOwner(_artId, msg.sender), "You don't own this art piece");
+
+        (,,,, address originalArtist) = artGallery.artWorks(_artId);
+        
         listingCount++;
         listings[listingCount] = Listing({
             artId: _artId,
             seller: msg.sender,
-            originalArtist: _originalArtist,
+            originalArtist: originalArtist,
             price: _price,
             isActive: true
         });
@@ -96,4 +108,20 @@ contract ArtMarket {
         payable(msg.sender).transfer(amount);
     }
 
+    function getListingDetails(uint256 _listingId) public view returns (
+        uint256 artId,
+        address seller,
+        address originalArtist,
+        uint256 price,
+        bool isActive
+    ) {
+        Listing memory listing = listings[_listingId];
+        return (
+            listing.artId,
+            listing.seller,
+            listing.originalArtist,
+            listing.price,
+            listing.isActive
+        );
+    }
 }
