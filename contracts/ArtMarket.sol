@@ -87,6 +87,7 @@ contract ArtMarket {
         emit ArtPurchased(listing.artId, msg.sender, listing.seller, listing.price, royaltyAmount);
 
         listing.isActive = false;
+        artGallery.transferOwnership(listing.artId, msg.sender);
 
         // refund excess payment
         if (msg.value > listing.price) {
